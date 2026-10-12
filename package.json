@@ -1,0 +1,52 @@
+{
+  "name": "dongtubox",
+  "version": "1.0.0",
+  "description": "东土百宝箱 - 多模块工具面板,内置 CSS 取色器",
+  "main": "src/main/main.js",
+  "author": "lucky",
+  "license": "MIT",
+  "scripts": {
+    "start": "electron .",
+    "dist": "electron-builder --win nsis"
+  },
+  "devDependencies": {
+    "electron": "^33.2.0",
+    "electron-builder": "^25.1.8",
+    "qrcode-generator": "^2.0.4"
+  },
+  "build": {
+    "appId": "com.dongtu.box",
+    "productName": "东土百宝箱",
+    "directories": {
+      "output": "dist",
+      "buildResources": "build"
+    },
+    "files": [
+      "src/**/*",
+      "package.json"
+    ],
+    "win": {
+      "target": [
+        {
+          "target": "nsis",
+          "arch": [
+            "x64"
+          ]
+        }
+      ],
+      "icon": "build/icon.ico"
+    },
+    "nsis": {
+      "oneClick": false,
+      "perMachine": false,
+      "allowToChangeInstallationDirectory": true,
+      "createDesktopShortcut": true,
+      "createStartMenuShortcut": true,
+      "shortcutName": "东土百宝箱",
+      "installerLanguages": [
+        "zh_CN"
+      ],
+      "language": "2052"
+    }
+  }
+}
