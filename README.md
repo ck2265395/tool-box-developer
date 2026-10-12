@@ -125,3 +125,7 @@ bash scripts/git-sync.sh "提交说明"   # 自定义提交信息
 `.gitignore` 已排除 `node_modules/`、`dist/`、`release*/`、QA 截图与日志，只提交源码与图标资源。
 
 凭据：仓库级已配置 `credential.helper=wincred`，token 存放于 Windows 凭据管理器（不落盘为明文）。
+
+> ⚠️ 本机环境已知问题：git **无法写入 `refs/remotes/**`**（`git fetch` / `git update-ref` 的写入被静默丢弃，`refs/heads/*`、`refs/tags/*` 均正常）。
+> 症状是 `git status` 误报 `[ahead N]` / `[gone]`。
+> 对策：`scripts/git-sync.sh` 会在每次执行时用直写文件的方式修复 `origin/main`，因此**不要手动跑 `git fetch`**（跑了也没关系，下次 `npm run sync` 会自愈）。
