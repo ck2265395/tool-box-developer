@@ -108,3 +108,20 @@ toolbox/
 
 打包：`npm run dist`
 3. 如需主进程能力，在 `src/main/main.js` 注册 IPC，在 `preload.js` 暴露
+
+---
+
+## 版本控制与同步
+
+远端仓库：<https://github.com/ck2265395/tool-box-developer>（分支 `main`）
+
+```bash
+npm run sync                      # 有改动就提交并推送，无改动静默跳过
+bash scripts/git-sync.sh "提交说明"   # 自定义提交信息
+```
+
+约定：每完成一次功能开发即执行一次同步，提交信息用中文、写清做了什么。
+
+`.gitignore` 已排除 `node_modules/`、`dist/`、`release*/`、QA 截图与日志，只提交源码与图标资源。
+
+凭据：仓库级已配置 `credential.helper=wincred`，token 存放于 Windows 凭据管理器（不落盘为明文）。
