@@ -1,6 +1,6 @@
 # 东土百宝箱 DongtuBox
 
-一个 Windows 桌面多模块工具面板（Electron），内置 6 个可用模块。
+一个 Windows 桌面多模块工具面板（Electron），内置 13 个可用模块，全部本地运行、不联网。
 
 ## 功能
 
@@ -45,7 +45,49 @@
 - 纯 canvas 绘制（整数倍缩放，边缘不糊），保存 PNG 到本地
 - 中文按 UTF-8 编码进矩阵，扫码不会乱码
 
-### 图片压缩（占位，待开发）
+### 图片压缩
+- 拖拽或选择文件批量导入（PNG / JPG / WebP / GIF / BMP）
+- 输出格式可切 JPG / WebP / PNG，质量 10–100 可调，最大边可选 960 / 1280 / 1920 / 2560 / 不限制
+- 列表里直接对比「压缩前 → 压缩后」的尺寸与体积，并标出省了多少百分比
+- 单张保存，或「全部导出」一次性铺进同一个文件夹（同名自动加序号，不覆盖）
+- 全程 canvas 本地处理，图片不上传
+
+### 颜色格式互转
+- 输入 HEX / rgb() / hsl() / hsv() / cmyk() 任意一种，自动识别并列出全部格式
+- 实时色块预览 + 明暗色阶（±10% ~ ±40% 共 9 档，点击即复制）
+- WCAG 对比度检查：给一个背景色，直接告诉你正文 AA(4.5) / 大号 AA(3) / AAA(7) 通不通过
+- 「复制全部格式」一把导出五种写法
+
+### JWT 解析
+- 粘贴 Token 自动拆出 Header 与 Payload，格式化展示（签名不校签、原样保留）
+- 自动把 `iat` / `nbf` / `exp` 换算成本地时间，并判断是否已过期 / 还未生效
+- 顶部直接给结论：Token 在有效期内 / 已过期 / 载荷里没有 exp
+- 支持自动剥掉 `Bearer ` 前缀，中文声明不乱码
+
+### 哈希校验
+- 文本与文件都能算：**MD5 / SHA-1 / SHA-256 / SHA-512**
+- 文本边打边算（防抖），文件拖进来即算，显示文件名与体积
+- MD5 为纯 JS 实现（浏览器 WebCrypto 不含 MD5），已用 RFC 1321 官方测试向量 + 与 Node `crypto` 对拍 0–200 字节全量校验
+- SHA 系列走 WebCrypto，结果点击即复制
+
+### 密码与 UUID
+- 强密码：长度 6–64，大写/小写/数字/符号四类可勾，可排除易混淆字符（`0OoIl1|` 等）
+- 随机源用 `crypto.getRandomValues` + 拒绝采样，避免取模偏差
+- 实时显示字符集大小、熵值（bit）与强度条（弱/中等/强/极强）
+- UUID v4 批量生成（1–200 条，格式与唯一性已自测），支持整体复制
+
+### 文本工具箱
+- 大小写：全大写 / 全小写 / 每词首字母大写 / 每句首字母大写 / 大小写互换
+- 命名风格：camelCase / PascalCase / snake_case / kebab-case / CONSTANT_CASE
+- 行操作：按行去重、升序/降序/按数字/按长度排序、反转行序、随机打乱、去行首尾空白、去空行、加行号、转 JSON 数组、每行加引号、批量加前缀后缀
+- 实时统计：字符数、不含空白字符数、行数、非空行、英文单词、中文字、UTF-8 字节数
+- 支持撤销上一步（保留最近 50 步）
+
+### 文本对比
+- 左右两栏粘贴新旧文本，逐行 diff（LCS 算法），新增/删除行分别着色高亮
+- 连续未变的行自动折叠（保留首尾各 4 行），长文本也看得清
+- 可选忽略大小写 / 忽略行首尾空白 / 忽略空行
+- 统计新增、删除、未变行数；可「复制差异清单」导出 `+ / -` 文本
 
 ## 取色器工作原理
 
@@ -70,7 +112,7 @@ npm run dist       # 打包 Windows NSIS 安装包（输出到 dist/）
 
 `npm run dist` 后在 `dist/` 目录生成：
 
-- `东土百宝箱 Setup 1.0.0.exe` — NSIS 安装向导（可选安装目录、创建桌面/开始菜单快捷方式）
+- `东土百宝箱 Setup 1.1.0.exe` — NSIS 安装向导（可选安装目录、创建桌面/开始菜单快捷方式）
 - `win-unpacked/` — 免安装绿色版（可直接运行其中的 `东土百宝箱.exe`）
 
 ## 目录结构
@@ -80,13 +122,14 @@ toolbox/
 ├─ build/icon.ico            # 应用图标（由图标脚本生成）
 ├─ scripts/make_icons*.py    # 图标候选生成（PIL 程序绘制）
 ├─ scripts/gen_ico.py        # 候选图 → 多尺寸 icon.ico / 侧栏 logo
-├─ scripts/test_logic.js     # 纯算法自测（JSON 定位 / Base64 / 时间戳 / 正则 / 二维码）
+├─ scripts/test_logic.js     # 纯算法自测（JSON 定位 / Base64 / 时间戳 / 正则 / 二维码 /
+│                            #   MD5·SHA / 颜色互转 / 命名风格 / diff / base64url / UUID）
 ├─ src/
-│  ├─ main/main.js           # 主进程：窗口管理、截屏取色、文件保存、IPC
+│  ├─ main/main.js           # 主进程：窗口管理、截屏取色、图片多格式保存、批量导出、IPC
 │  ├─ main/preload.js        # 预加载桥（contextBridge）
 │  └─ renderer/
 │     ├─ index.html          # 主面板（多模块框架）
-│     ├─ app.js              # 模块路由 + 全部六个模块的实现
+│     ├─ app.js              # 模块路由 + 全部 13 个模块的实现
 │     ├─ style.css           # 深色主题
 │     ├─ picker.html         # 全屏取色覆盖层
 │     ├─ picker.css
@@ -103,11 +146,13 @@ toolbox/
    ```js
    const VIEWS = { ..., xxx: () => [xxxTpl(), bindXxx] };
    ```
-3. 需要的样式丢进 `src/renderer/style.css`，通用类（`.tool-row` / `.pane` / `.ta` / `.btn-row` / `.msg` / `.kv-list` 等）已经备好，直接复用即可
+3. 需要的样式丢进 `src/renderer/style.css`，通用类（`.tool-row` / `.pane` / `.ta` / `.btn-row` / `.msg` / `.kv-list` / `.drop-zone` / `.mini-btn` 等）已经备好，直接复用即可
 4. 模块里如果起了定时器或全局监听，把它挂到 `window.__viewCleanup`，切换模块时会自动清理
+5. 如需主进程能力（文件对话框、读写剪贴板、网络等），在 `src/main/main.js` 用 `ipcMain.handle` 注册，再在 `preload.js` 里暴露成 `window.api.xxx`
+
+自测：`node scripts/test_logic.js`（纯算法，不依赖 Electron；`app.js` 的语法也会被顺带检查）
 
 打包：`npm run dist`
-3. 如需主进程能力，在 `src/main/main.js` 注册 IPC，在 `preload.js` 暴露
 
 ---
 

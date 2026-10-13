@@ -1,6 +1,6 @@
 {
   "name": "dongtubox",
-  "version": "1.0.0",
+  "version": "1.1.0",
   "description": "东土百宝箱 - 多模块工具面板,内置 CSS 取色器",
   "main": "src/main/main.js",
   "author": "lucky",
@@ -8,6 +8,7 @@
   "scripts": {
     "start": "electron .",
     "dist": "electron-builder --win nsis",
+    "test": "node scripts/test_logic.js",
     "sync": "bash scripts/git-sync.sh"
   },
   "devDependencies": {

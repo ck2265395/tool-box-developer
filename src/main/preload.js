@@ -6,6 +6,7 @@ contextBridge.exposeInMainWorld('api', {
   copyText: (text) => ipcRenderer.invoke('clipboard:write', text),
   readText: () => ipcRenderer.invoke('clipboard:read'),
   saveImage: (dataURL, defaultName) => ipcRenderer.invoke('file:saveImage', dataURL, defaultName),
+  saveBatch: (items, defaultDir) => ipcRenderer.invoke('file:saveBatch', items, defaultDir),
   saveText: (text, defaultName) => ipcRenderer.invoke('file:saveText', text, defaultName),
   onPickerResult: (cb) => ipcRenderer.on('picker:result', (_e, data) => cb(data)),
   onPickerCancel: (cb) => ipcRenderer.on('picker:cancel', () => cb()),

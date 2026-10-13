@@ -159,19 +159,81 @@ ipcMain.handle('clipboard:write', (_e, text) => {
 
 ipcMain.handle('clipboard:read', () => clipboard.readText());
 
-/* 保存 dataURL 图片（二维码导出用） */
+/* 把 dataURL 落盘成文件 */
+function writeDataURL(filePath, dataURL) {
+  const base64 = String(dataURL).replace(/^data:[\w/+.-]+;base64,/, '');
+  fs.writeFileSync(filePath, Buffer.from(base64, 'base64'));
+}
+
+/* 按扩展名给保存对话框配过滤器，省得导 JPG 时被默认成 PNG */
+const IMAGE_FILTERS = {
+  png: [{ name: 'PNG 图片', extensions: ['png'] }],
+  jpg: [{ name: 'JPEG 图片', extensions: ['jpg', 'jpeg'] }],
+  jpeg: [{ name: 'JPEG 图片', extensions: ['jpg', 'jpeg'] }],
+  webp: [{ name: 'WebP 图片', extensions: ['webp'] }],
+  gif: [{ name: 'GIF 图片', extensions: ['gif'] }]
+};
+
+/* 保存单张 dataURL 图片（二维码导出、图片压缩导出用） */
 ipcMain.handle('file:saveImage', async (_e, dataURL, defaultName) => {
   try {
     const win = BrowserWindow.getFocusedWindow() || mainWin;
+    const name = defaultName || 'image.png';
+    const ext = String(name).split('.').pop().toLowerCase();
     const { canceled, filePath } = await dialog.showSaveDialog(win, {
       title: '保存图片',
-      defaultPath: path.join(app.getPath('pictures'), defaultName || 'image.png'),
-      filters: [{ name: 'PNG 图片', extensions: ['png'] }]
+      defaultPath: path.join(app.getPath('pictures'), name),
+      filters: IMAGE_FILTERS[ext] || [{ name: '所有文件', extensions: ['*'] }]
     });
     if (canceled || !filePath) return { ok: false, canceled: true };
-    const base64 = String(dataURL).replace(/^data:image\/\w+;base64,/, '');
-    fs.writeFileSync(filePath, Buffer.from(base64, 'base64'));
+    writeDataURL(filePath, dataURL);
     return { ok: true, path: filePath };
+  } catch (err) {
+    return { ok: false, error: String((err && err.message) || err) };
+  }
+});
+
+/* 批量保存：挑一个文件夹，一次性把多张图片写进去（图片压缩批量导出用） */
+ipcMain.handle('file:saveBatch', async (_e, items, defaultDir) => {
+  try {
+    const list = Array.isArray(items) ? items : [];
+    if (list.length === 0) return { ok: false, error: '没有可保存的文件' };
+
+    const win = BrowserWindow.getFocusedWindow() || mainWin;
+    const { canceled, filePaths } = await dialog.showOpenDialog(win, {
+      title: '选择保存文件夹',
+      defaultPath: defaultDir || app.getPath('pictures'),
+      properties: ['openDirectory', 'createDirectory']
+    });
+    if (canceled || !filePaths || !filePaths.length) return { ok: false, canceled: true };
+
+    const dir = filePaths[0];
+    const written = [];
+    const failed = [];
+    const used = new Set();
+
+    for (const item of list) {
+      try {
+        // 同名文件自动加 (2)(3) 后缀，避免互相覆盖
+        let base = path.basename(String(item.name || 'image.png'));
+        const dot = base.lastIndexOf('.');
+        const stem = dot > 0 ? base.slice(0, dot) : base;
+        const ext = dot > 0 ? base.slice(dot) : '';
+        let name = base;
+        let n = 1;
+        while (used.has(name.toLowerCase()) || fs.existsSync(path.join(dir, name))) {
+          n += 1;
+          name = `${stem} (${n})${ext}`;
+        }
+        used.add(name.toLowerCase());
+        writeDataURL(path.join(dir, name), item.dataURL);
+        written.push(name);
+      } catch (err) {
+        failed.push(String((err && err.message) || err));
+      }
+    }
+
+    return { ok: written.length > 0, dir, count: written.length, failed };
   } catch (err) {
     return { ok: false, error: String((err && err.message) || err) };
   }
